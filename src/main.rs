@@ -126,13 +126,8 @@ fn xor_encrypt(key: &[u8], plaintext: &[u8]) -> Vec<u8> {
     let mut i = 0;
 
     while i < plaintext.len() {
-        for k in key {
-            ciphertext.push(plaintext[i] ^ k);
-            i += 1;
-            if i == plaintext.len() {
-                break;
-            }
-        }
+        ciphertext.push(plaintext[i] ^ key[i % key.len()]);
+        i += 1;
     }
 
     ciphertext
