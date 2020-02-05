@@ -13,6 +13,7 @@
 //!
 //! This trait's methods return new objects containing the results of the operation.
 
+use std::cmp;
 use base64;
 
 pub trait CryptoByteArray {
@@ -22,9 +23,12 @@ pub trait CryptoByteArray {
     fn into_base64(&self) -> Self;
 
     fn from_hexstring(hexstring: &str) -> Self;
+
+    fn hamming_distance_from(&self, n: Self) -> usize;
 }
 
 impl CryptoByteArray for Vec<u8> {
+
     fn into_hexstring(&self) -> Vec<u8> {
         bytes_to_hexstr(self)
     }
@@ -35,6 +39,21 @@ impl CryptoByteArray for Vec<u8> {
 
     fn from_hexstring(hexstring: &str) -> Self {
         hexstr_to_bytes(&Vec::from(hexstring))
+    }
+
+    fn hamming_distance_from(&self, n: Self) -> usize {
+        let min_length = cmp::min(self.len(), n.len());
+        let max_len = cmp::max(self.len(), n.len());
+        let mut distance = (max_len - min_length) * 8;
+
+        for i in 0..min_length {
+            let different_bits = self[i] ^ n[i];
+            for j in 0..7 {
+                distance += ((different_bits >> j) & 0x01) as usize;
+            }
+        }
+
+        distance
     }
 }
 
@@ -92,4 +111,21 @@ mod tests {
         let expected: Vec<u8> = Vec::from("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t");
         assert_eq!(hexstr_to_base64(&value), expected);
     }
+
+    #[test]
+    fn test_hamming_distance() {
+        let first = Vec::from("this is a test");
+        let second = Vec::from("wokka wokka!!!");
+
+        assert_eq!(first.hamming_distance_from(second), 37);
+    }
+
+    #[test]
+    fn test_hamming_distance_diff_lengths() {
+        let first = Vec::from("this is a test");
+        let second = Vec::from("this is");
+
+        assert_eq!(first.hamming_distance_from(second), 56);
+    }
+
 }
